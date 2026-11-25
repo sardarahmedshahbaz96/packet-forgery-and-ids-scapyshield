@@ -1,7 +1,27 @@
+# ==============================================================================
+# app.py - Main GUI Cyber Security Control Dashboard Application
+# ==============================================================================
+
+import os
+import sys
+import os.path
+
+# 🛡️ SYSTEM BYPASS MONKEYPATCH
+# Forces Scapy to use your project directory for data and caching profiles.
+# This prevents Windows User Profile PermissionErrors (WinError 5) natively.
+def bypass_expanduser(path="~"):
+    return os.path.dirname(os.path.abspath(__file__))
+
+os.path.expanduser = bypass_expanduser
+os.environ["SCAPY_HOME"] = os.path.dirname(os.path.abspath(__file__))
+
 import tkinter as tk
 from tkinter import ttk, scrolledtext
 import threading
 import time
+
+# Central Matrix Imports
+import config
 
 # Import teammate panels
 from rules_panel import DetectionRulesPanel
@@ -10,30 +30,18 @@ from analytics_panel import AnalyticsPanel
 # Import teammate backend engines & execution entry point
 from sniffer import start_sniffer   
 
-# --- Theme Configuration Constants ---
-BG_MAIN = "#0a0b10"
-BG_SURFACE = "#121420"
-BG_CONSOLE = "#05060a"
-TEXT_PRIMARY = "#e2e8f0"
-TEXT_MUTED = "#6272a4"
-
-# Neon Accents
-NEON_CYAN = "#00f0ff"
-NEON_MAGENTA = "#ff007f"
-NEON_YELLOW = "#ffb86c"
-NEON_GREEN = "#50fa7b"
 
 class ScapyShieldApp:
     def __init__(self, root):
         self.root = root
         self.root.title("ScapyShield // Cyber Security Dashboard")
         self.root.geometry("1100x650")
-        self.root.configure(bg=BG_MAIN)
+        self.root.configure(bg=config.BG_MAIN)
         
-        # Configure Styles for standard ttk widgets
+        # Configure Styles for standard ttk widgets using central configurations
         self.style = ttk.Style()
         self.style.theme_use('default')
-        self.style.configure('.', background=BG_SURFACE, foreground=TEXT_PRIMARY)
+        self.style.configure('.', background=config.BG_SURFACE, foreground=config.TEXT_PRIMARY)
 
         # Track navigation elements and state
         self.nav_buttons = {}
@@ -47,12 +55,18 @@ class ScapyShieldApp:
 
     def setup_layout(self):
         # 1. SIDEBAR NAVIGATION PANELS
-        sidebar = tk.Frame(self.root, bg=BG_SURFACE, width=240, padx=15, pady=20)
+        sidebar = tk.Frame(self.root, bg=config.BG_SURFACE, width=240, padx=15, pady=20)
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
 
         # Logo Area
-        logo_label = tk.Label(sidebar, text="🛡️ SCAPYSHIELD", font=("Courier New", 14, "bold"), fg=NEON_CYAN, bg=BG_SURFACE)
+        logo_label = tk.Label(
+            sidebar, 
+            text="🛡️ SCAPYSHIELD", 
+            font=(config.FONT_FAMILY, 14, "bold"), 
+            fg=config.NEON_CYAN, 
+            bg=config.BG_SURFACE
+        )
         logo_label.pack(anchor="w", pady=(0, 25))
 
         # Nav Links Mapping to Panel Methods
@@ -64,19 +78,19 @@ class ScapyShieldApp:
         
         for item_text, target_view in nav_items:
             is_initial_active = (target_view == "console")
-            fg_color = TEXT_PRIMARY if is_initial_active else TEXT_MUTED
-            bg_color = BG_CONSOLE if is_initial_active else BG_SURFACE
-            border_color = NEON_CYAN if is_initial_active else "#262626"
+            fg_color = config.TEXT_PRIMARY if is_initial_active else config.TEXT_MUTED
+            bg_color = config.BG_CONSOLE if is_initial_active else config.BG_SURFACE
+            border_color = config.NEON_CYAN if is_initial_active else config.BORDER_COLOR
             
             # High-tactility solid outline button style instead of flat label
             btn = tk.Button(
                 sidebar, 
                 text=item_text, 
-                font=("Courier New", 10, "bold"), 
+                font=(config.FONT_FAMILY, 10, "bold"), 
                 fg=fg_color, 
                 bg=bg_color,
-                activebackground=BG_CONSOLE,
-                activeforeground=NEON_CYAN,
+                activebackground=config.BG_CONSOLE,
+                activeforeground=config.NEON_CYAN,
                 bd=1, 
                 relief="solid",
                 highlightthickness=0,
@@ -96,38 +110,60 @@ class ScapyShieldApp:
             self.nav_buttons[target_view] = btn
 
         # System Status Footer
-        status_frame = tk.Frame(sidebar, bg=BG_SURFACE)
+        status_frame = tk.Frame(sidebar, bg=config.BG_SURFACE)
         status_frame.pack(side="bottom", anchor="w", pady=10)
-        self.status_dot = tk.Label(status_frame, text="●", fg=NEON_GREEN, bg=BG_SURFACE, font=("Arial", 12))
+        self.status_dot = tk.Label(status_frame, text="●", fg=config.NEON_GREEN, bg=config.BG_SURFACE, font=("Arial", 12))
         self.status_dot.pack(side="left")
-        self.status_txt = tk.Label(status_frame, text=" SYSTEM ACTIVE", fg=NEON_GREEN, bg=BG_SURFACE, font=("Courier New", 9, "bold"))
+        self.status_txt = tk.Label(
+            status_frame, 
+            text=" SYSTEM ACTIVE", 
+            fg=config.NEON_GREEN, 
+            bg=config.BG_SURFACE, 
+            font=(config.FONT_FAMILY, 9, "bold")
+        )
         self.status_txt.pack(side="left")
 
         # 2. MAIN CONTAINER ARCHITECTURE
-        self.main_content = tk.Frame(self.root, bg=BG_MAIN, padx=20, pady=20)
+        self.main_content = tk.Frame(self.root, bg=config.BG_MAIN, padx=20, pady=20)
         self.main_content.pack(side="right", fill="both", expand=True)
 
         # Header Ribbon
-        header_frame = tk.Frame(self.main_content, bg=BG_MAIN)
+        header_frame = tk.Frame(self.main_content, bg=config.BG_MAIN)
         header_frame.pack(fill="x", pady=(0, 15))
         
-        title_lbl = tk.Label(header_frame, text="SECURITY CONTROL CENTER", font=("Courier New", 12, "bold"), fg=TEXT_PRIMARY, bg=BG_MAIN)
+        title_lbl = tk.Label(
+            header_frame, 
+            text="SECURITY CONTROL CENTER", 
+            font=(config.FONT_FAMILY, 12, "bold"), 
+            fg=config.TEXT_PRIMARY, 
+            bg=config.BG_MAIN
+        )
         title_lbl.pack(side="left")
         
-        iface_lbl = tk.Label(header_frame, text="IFACE: Default", font=("Courier New", 9, "bold"), fg=NEON_CYAN, bg=BG_MAIN, bd=1, relief="solid", padx=8, pady=2)
+        iface_lbl = tk.Label(
+            header_frame, 
+            text="IFACE: Default", 
+            font=(config.FONT_FAMILY, 9, "bold"), 
+            fg=config.NEON_CYAN, 
+            bg=config.BG_MAIN, 
+            bd=1, 
+            relief="solid", 
+            padx=8, 
+            pady=2
+        )
         iface_lbl.pack(side="right")
 
         # 3. METRICS UPPER DISPLAY ROW (Glowing Borders)
-        metrics_frame = tk.Frame(self.main_content, bg=BG_MAIN)
+        metrics_frame = tk.Frame(self.main_content, bg=config.BG_MAIN)
         metrics_frame.pack(fill="x", pady=(0, 20))
         metrics_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="equal")
 
-        self.create_metric_card(metrics_frame, 0, "Packets Sniffed", "142,839", NEON_CYAN)
-        self.create_metric_card(metrics_frame, 1, "SYN Scans Detected", "42", NEON_YELLOW)
-        self.create_metric_card(metrics_frame, 2, "Spoofed Responses", "42", NEON_MAGENTA)
+        self.create_metric_card(metrics_frame, 0, "Packets Sniffed", "142,839", config.NEON_CYAN)
+        self.create_metric_card(metrics_frame, 1, "SYN Scans Detected", "42", config.NEON_YELLOW)
+        self.create_metric_card(metrics_frame, 2, "Spoofed Responses", "42", config.NEON_MAGENTA)
 
         # 4. VIEWPORT CONTEXT FRAME (Dynamic Display Area)
-        self.viewport_frame = tk.Frame(self.main_content, bg=BG_MAIN)
+        self.viewport_frame = tk.Frame(self.main_content, bg=config.BG_MAIN)
         self.viewport_frame.pack(fill="both", expand=True)
 
         # Default View initialization
@@ -136,12 +172,12 @@ class ScapyShieldApp:
     def on_nav_hover(self, btn, view_name):
         """Highlights the navbar item under the mouse cursor"""
         if self.current_view != view_name:
-            btn.config(fg=NEON_CYAN, bg=BG_CONSOLE)
+            btn.config(fg=config.NEON_CYAN, bg=config.BG_CONSOLE)
 
     def on_nav_leave(self, btn, view_name):
         """Reverts styling when the mouse leaves the navigation element"""
         if self.current_view != view_name:
-            btn.config(fg=TEXT_MUTED, bg=BG_SURFACE)
+            btn.config(fg=config.TEXT_MUTED, bg=config.BG_SURFACE)
 
     def clear_viewport(self):
         """Wipes the dynamic content window before switching views"""
@@ -155,9 +191,9 @@ class ScapyShieldApp:
         # Update styling profiles for active vs inactive tabs
         for name, btn in self.nav_buttons.items():
             if name == view_name:
-                btn.config(fg=TEXT_PRIMARY, bg=BG_CONSOLE, highlightbackground=NEON_CYAN)
+                btn.config(fg=config.TEXT_PRIMARY, bg=config.BG_CONSOLE, highlightbackground=config.NEON_CYAN)
             else:
-                btn.config(fg=TEXT_MUTED, bg=BG_SURFACE, highlightbackground="#262626")
+                btn.config(fg=config.TEXT_MUTED, bg=config.BG_SURFACE, highlightbackground=config.BORDER_COLOR)
 
         self.clear_viewport()
         
@@ -177,51 +213,71 @@ class ScapyShieldApp:
         self.viewport_frame.grid_rowconfigure(0, weight=1)
 
         # Live Terminal Panel Console Frame
-        console_panel = tk.Frame(self.viewport_frame, bg=BG_SURFACE, bd=1, relief="solid", highlightbackground=TEXT_MUTED)
+        console_panel = tk.Frame(self.viewport_frame, bg=config.BG_SURFACE, bd=1, relief="solid", highlightbackground=config.TEXT_MUTED)
         console_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
-        console_hdr = tk.Frame(console_panel, bg=BG_SURFACE, padx=10, pady=8)
+        console_hdr = tk.Frame(console_panel, bg=config.BG_SURFACE, padx=10, pady=8)
         console_hdr.pack(fill="x")
-        tk.Label(console_hdr, text="💻 Live Sniffer Console", font=("Courier New", 10, "bold"), fg=NEON_CYAN, bg=BG_SURFACE).pack(side="left")
-        self.sniff_status_lbl = tk.Label(console_hdr, text="● Sniffing...", font=("Courier New", 9, "bold"), fg=NEON_GREEN, bg=BG_SURFACE)
+        
+        tk.Label(
+            console_hdr, 
+            text="💻 Live Sniffer Console", 
+            font=(config.FONT_FAMILY, 10, "bold"), 
+            fg=config.NEON_CYAN, 
+            bg=config.BG_SURFACE
+        ).pack(side="left")
+        
+        self.sniff_status_lbl = tk.Label(
+            console_hdr, 
+            text="● Sniffing...", 
+            font=(config.FONT_FAMILY, 9, "bold"), 
+            fg=config.NEON_GREEN, 
+            bg=config.BG_SURFACE
+        )
         self.sniff_status_lbl.pack(side="right")
 
         self.console_text = scrolledtext.ScrolledText(
             console_panel, 
-            bg=BG_CONSOLE, 
-            fg=TEXT_MUTED, 
-            insertbackground=NEON_CYAN, 
-            selectbackground=BG_SURFACE,
-            selectforeground=TEXT_PRIMARY,
-            font=("Courier New", 10), 
+            bg=config.BG_CONSOLE, 
+            fg=config.TEXT_MUTED, 
+            insertbackground=config.NEON_CYAN, 
+            selectbackground=config.BG_SURFACE,
+            selectforeground=config.TEXT_PRIMARY,
+            font=(config.FONT_FAMILY, config.FONT_SIZE_CONSOLE), 
             bd=0, 
             padx=10, 
             pady=10
         )
         self.console_text.pack(fill="both", expand=True)
         
-        # Color logging definitions
-        self.console_text.tag_config('warning', foreground=NEON_YELLOW)
-        self.console_text.tag_config('success', foreground=NEON_GREEN)
-        self.console_text.tag_config('forger', foreground=NEON_CYAN)
-        self.console_text.tag_config('error', foreground=NEON_MAGENTA)
+        # Color logging definitions connected directly to global accents Matrix
+        self.console_text.tag_config('warning', foreground=config.NEON_YELLOW)
+        self.console_text.tag_config('success', foreground=config.NEON_GREEN)
+        self.console_text.tag_config('forger', foreground=config.NEON_CYAN)
+        self.console_text.tag_config('error', foreground=config.NEON_MAGENTA)
 
         self.console_text.configure(state="normal")
         self.console_text.insert(tk.END, "[*] GUI Console Thread Attached Successfully.\n")
         self.console_text.configure(state="disabled")
 
         # Module Architecture Sidebar Box
-        arch_panel = tk.Frame(self.viewport_frame, bg=BG_SURFACE, bd=1, relief="solid")
+        arch_panel = tk.Frame(self.viewport_frame, bg=config.BG_SURFACE, bd=1, relief="solid", highlightbackground=config.BORDER_COLOR)
         arch_panel.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
 
-        arch_hdr = tk.Frame(arch_panel, bg=BG_SURFACE, padx=10, pady=8)
+        arch_hdr = tk.Frame(arch_panel, bg=config.BG_SURFACE, padx=10, pady=8)
         arch_hdr.pack(fill="x")
-        tk.Label(arch_hdr, text="⚙️ Module Architecture", font=("Courier New", 10, "bold"), fg=NEON_MAGENTA, bg=BG_SURFACE).pack(side="left")
+        tk.Label(
+            arch_hdr, 
+            text="⚙️ Module Architecture", 
+            font=(config.FONT_FAMILY, 10, "bold"), 
+            fg=config.NEON_MAGENTA, 
+            bg=config.BG_SURFACE
+        ).pack(side="left")
 
         # Status displays
-        self.create_component_item(arch_panel, "sniffer.py", "Captures raw TCP packets", "RUNNING", NEON_CYAN)
-        self.create_component_item(arch_panel, "detector.py", "Parses raw packet data", "ACTIVE", NEON_YELLOW)
-        self.create_component_item(arch_panel, "forger.py", "Assembles & injects packets", "STANDBY", NEON_MAGENTA)
+        self.create_component_item(arch_panel, "sniffer.py", "Captures raw TCP packets", "RUNNING", config.NEON_CYAN)
+        self.create_component_item(arch_panel, "detector.py", "Parses raw packet data", "ACTIVE", config.NEON_YELLOW)
+        self.create_component_item(arch_panel, "forger.py", "Assembles & injects packets", "STANDBY", config.NEON_MAGENTA)
 
     # --- MULTI-THREADING BACKGROUND ENGINE ---
     def start_monitoring(self):
@@ -250,27 +306,49 @@ class ScapyShieldApp:
     # --- HELPER UI COMPONENT GENERATORS ---
     def create_metric_card(self, parent, col, title, value, color):
         # Increased highlightthickness to create a premium glowing neon border effect
-        card = tk.Frame(parent, bg=BG_SURFACE, bd=0, highlightthickness=2, highlightbackground=color)
+        card = tk.Frame(parent, bg=config.BG_SURFACE, bd=0, highlightthickness=2, highlightbackground=color)
         card.grid(row=0, column=col, sticky="nsew", padx=12, pady=8)
         
-        lbl_title = tk.Label(card, text=title.upper(), font=("Courier New", 8, "bold"), fg=TEXT_MUTED, bg=BG_SURFACE)
+        lbl_title = tk.Label(
+            card, 
+            text=title.upper(), 
+            font=(config.FONT_FAMILY, 8, "bold"), 
+            fg=config.TEXT_MUTED, 
+            bg=config.BG_SURFACE
+        )
         lbl_title.pack(anchor="w", padx=15, pady=(12, 2))
         
-        lbl_val = tk.Label(card, text=value, font=("Courier New", 20, "bold"), fg=color, bg=BG_SURFACE)
+        lbl_val = tk.Label(
+            card, 
+            text=value, 
+            font=(config.FONT_FAMILY, 20, "bold"), 
+            fg=color, 
+            bg=config.BG_SURFACE
+        )
         lbl_val.pack(anchor="w", padx=15, pady=(0, 12))
 
     def create_component_item(self, parent, filename, desc, status, accent_color):
-        item_frame = tk.Frame(parent, bg=BG_MAIN, bd=1, relief="flat", highlightthickness=1, highlightbackground="#262626")
+        item_frame = tk.Frame(parent, bg=config.BG_MAIN, bd=1, relief="flat", highlightthickness=1, highlightbackground=config.BORDER_COLOR)
         item_frame.pack(fill="x", padx=12, pady=8, ipady=4)
 
-        text_container = tk.Frame(item_frame, bg=BG_MAIN)
+        text_container = tk.Frame(item_frame, bg=config.BG_MAIN)
         text_container.pack(side="left", padx=8)
         
-        tk.Label(text_container, text=filename, font=("Courier New", 9, "bold"), fg=TEXT_PRIMARY, bg=BG_MAIN).pack(anchor="w")
-        tk.Label(text_container, text=desc, font=("Courier New", 7), fg=TEXT_MUTED, bg=BG_MAIN).pack(anchor="w")
+        tk.Label(text_container, text=filename, font=(config.FONT_FAMILY, 9, "bold"), fg=config.TEXT_PRIMARY, bg=config.BG_MAIN).pack(anchor="w")
+        tk.Label(text_container, text=desc, font=(config.FONT_FAMILY, 7), fg=config.TEXT_MUTED, bg=config.BG_MAIN).pack(anchor="w")
 
-        badge = tk.Label(item_frame, text=status, font=("Courier New", 7, "bold"), fg=accent_color, bg=BG_SURFACE, bd=1, relief="solid", padx=4)
+        badge = tk.Label(
+            item_frame, 
+            text=status, 
+            font=(config.FONT_FAMILY, 7, "bold"), 
+            fg=accent_color, 
+            bg=config.BG_SURFACE, 
+            bd=1, 
+            relief="solid", 
+            padx=4
+        )
         badge.pack(side="right", padx=10)
+
 
 if __name__ == "__main__":
     root = tk.Tk()

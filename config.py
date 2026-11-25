@@ -1,17 +1,25 @@
-# config.py - Centralized Configuration Matrix
+# ==============================================================================
+# config.py - Centralized Configuration Matrix for ScapyShield
+# ==============================================================================
 
-DATABASE_NAME = "scapy_shield.db"
+# --- Database Settings ---
+DATABASE_NAME = "scapyshield.db"
 
-# UI Theme Styling Constants
-BG_MAIN = "#0d0d13"        # Deep dark blue/black
-BG_PANEL = "#121217"       # Slightly lighter card background
-BORDER_COLOR = "#262626"   # Sleek dark gray border
+# --- Core UI UI Theme & Backgrounds ---
+BG_MAIN = "#0a0b10"        # Deep dark cyber blue/black
+BG_SURFACE = "#121420"     # Slightly lighter card/panel background
+BG_CONSOLE = "#05060a"     # Ultra-dark terminal background
+BORDER_COLOR = "#262626"   # Sleek structural border gray
 
-# Neon Accents
-NEON_CYAN = "#00FFFF"      # Main branding accent
-NEON_GREEN = "#00FF00"     # Active / Running states
-NEON_MAGENTA = "#FF00FF"   # Standing / Injecting alerts
+# --- Typography & Text Colors ---
+TEXT_PRIMARY = "#e2e8f0"   # High-contrast primary text
+TEXT_MUTED = "#6272a4"     # Drab/secondary text for labels and details
 
-# Typography
 FONT_FAMILY = "Courier New"
 FONT_SIZE_CONSOLE = 10
+
+# --- Tactical Neon Accents & State Indicators ---
+NEON_CYAN = "#00f0ff"      # Primary branding & informational highlights
+NEON_GREEN = "#50fa7b"     # Active, running, and successful operations
+NEON_YELLOW = "#ffb86c"    # Warnings, probes, and scan notifications
+NEON_MAGENTA = "#ff007f"   # Critical events, standing alerts, and injections
